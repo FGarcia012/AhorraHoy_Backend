@@ -6,6 +6,9 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { dbconnection } from './mongo.js';
 import apiLimiter from '../src/middlewares/rate-limit-validator.js';
+import authRouter from '../src/auth/auth.routes.js';
+import userRouter from '../src/user/user.routes.js';
+import { swaggerDocs, swaggerUi } from './swagger.js';
 
 const middlewares = (app) => {
     app.use(express.urlencoded({ extended: false }))
@@ -17,7 +20,9 @@ const middlewares = (app) => {
 }
 
 const router = (app) => {
-
+    app.use('/ahorraHoy/v1/auth', authRouter)
+    app.use('/ahorraHoy/v1/user', userRouter)
+    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs))
 }
 
 const conectDB = async () => {
