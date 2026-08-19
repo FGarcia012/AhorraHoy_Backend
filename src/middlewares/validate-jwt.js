@@ -6,29 +6,29 @@ export const validateJWT = async (req, res, next) => {
         let token = req.body.token || req.query.token || req.headers['authorization'];
 
         if (!token) {
-            return res.status(401).json({
+            return res.status(400).json({
                 success: false,
                 message: 'No existe un token en la petición',
             });
         }
 
-        token = token.replace(/^Bearer\s/, '');
+        token = token.replace(/^Bearer\s+/, '');
 
-        const { uid } = jwt.verify(token, process.env.SECRETORPRIVATEKEY);
+        const { uid } = jwt.verify(token, process.env.SECRETPRIVATEKEY);
         console.log(`Token uid: ${uid}`);
 
         const user = await User.findById(uid);
         console.log(`user found: ${user}`);
 
         if (!user) {
-            return res.status(401).json({
+            return res.status(400).json({
                 success: false,
                 message: 'El usuario no encontrado o no existe en la base de datos',
             });
         }
 
         if (!user.status) {
-            return res.status(401).json({
+            return res.status(400).json({
                 success: false,
                 message: 'El usuario está deshabilitado',
             });
