@@ -33,7 +33,7 @@ export const updatePasswordValidator = [
     validateJWT,
     param('uid').isMongoId().withMessage('No es un ID valido'),
     param('uid').custom(userExists),
-    param('uid').custom(isUserRole),
+    param('uid').custom(isSameUserOrAdmin),
     body('newPassword').isLength({ min: 8 }).withMessage('La contraseña debe tener al menos 8 caracteres'),
     validarCampos,
     handleErrors
@@ -52,7 +52,7 @@ export const updateProfilePictureValidator = [
     validateJWT,
     param('uid').isMongoId().withMessage('No es un ID valido'),
     param('uid').custom(userExists),
-    param('uid').custom(isUserRole),
+    param('uid').custom(isSameUserOrAdmin),
     validarCampos,
     handleErrors
 ];

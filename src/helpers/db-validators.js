@@ -28,7 +28,7 @@ export const isAdminRole = async (uid) => {
     }
 };
 
-export const isSameUserOrAdmin = async (uid, req) => {
+export const isSameUserOrAdmin = async (uid, { req }) => {
     const user = await User.findById(uid);
     if (user.role === 'ADMIN' && req.usuario.role === 'ADMIN' && req.usuario.id !== uid) {
         throw new Error("Los administradores no pueden modificar o eliminar a otros administradores");

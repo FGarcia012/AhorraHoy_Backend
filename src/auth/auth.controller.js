@@ -29,19 +29,20 @@ export const register = async (req, res) => {
     }
 }
 
-export const login = async (req,res) => {
+export const login = async (req, res) => {
     const { email, password } = req.body;
+
     try {
         const user = await User.findOne({
             $or: [{ email: email }]
-        })
+        });
 
         if (!user) {
             return res.status(404).json({
                 success: false,
                 message: 'Credenciales incorrectas',
                 error: 'No existe el correo ingresado'
-            })
+            });
         }
 
         const validPassword = await verify(user.password, password);
@@ -51,10 +52,10 @@ export const login = async (req,res) => {
                 success: false,
                 message: 'Credenciales incorrectas',
                 error: 'La contraseña ingresada es incorrecta'
-            })
+            });
         }
 
-        const token = await generateJWT(user.uid);
+        const token = await generateJWT(user.id);
 
         return res.status(200).json({
             success: true,
@@ -63,12 +64,13 @@ export const login = async (req,res) => {
                 token: token,
                 profilePicture: user.profilePicture
             }
-        })
+        });
+
     } catch (err) {
         return res.status(500).json({
             success: false,
             message: 'Error al iniciar sesión',
             error: err.message
-        })
+        });
     }
-}
+};
