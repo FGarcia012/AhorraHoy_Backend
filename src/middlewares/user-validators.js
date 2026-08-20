@@ -54,6 +54,7 @@ export const updateProfilePictureValidator = [
     param('uid').custom(userExists),
     param('uid').custom(isSameUserOrAdmin),
     validarCampos,
+    deleteFileOnError,
     handleErrors
 ];
 
