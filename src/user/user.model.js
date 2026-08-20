@@ -4,12 +4,12 @@ const userSchema = Schema({
     name: {
         type: String,
         required: [true, 'Name is required'],
-        mxLength: [35, 'Name cannot exceed 35 characters']
+        maxLength: [35, 'Name cannot exceed 35 characters']
     },
     surname: {
         type: String,
         required: [true, 'Surname is required'],
-        mxLength: [35, 'Surname cannot exceed 35 characters']
+        maxLength: [35, 'Surname cannot exceed 35 characters']
     },
     email: {
         type: String,
