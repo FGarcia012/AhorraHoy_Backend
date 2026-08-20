@@ -43,7 +43,7 @@ export const updateUserValidator = [
     validateJWT,
     param('uid').isMongoId().withMessage('No es un ID valido'),
     param('uid').custom(userExists),
-    param('uid').custom((uid, { req }) => isSameUserOrAdmin(uid, req)),
+    param('uid').custom((uid, { req }) => isSameUserOrAdmin(uid, { req })),
     validarCampos,
     handleErrors
 ];
@@ -61,14 +61,14 @@ export const deleteUserValidator = [
     validateJWT,
     param('uid').isMongoId().withMessage('No es un ID valido'),
     param('uid').custom(userExists),
-    param("uid").custom((uid, { req }) => isSameUserOrAdmin(uid, req)),
+    param("uid").custom((uid, { req }) => isSameUserOrAdmin(uid, { req })),
     validarCampos,
     handleErrors
 ];
 
 export const confirmDelete = [
     body('confirm').isString().withMessage('Confirmación no proporcionada'),
-    body('confirm').isIn(['yes', 'no']).withMessage('Confirmación no valida'),
+    body('confirm').isIn(['yes']).withMessage('No se ha eliminado el usuario, se requiere confirmación'),
     validarCampos,
     handleErrors
 ];

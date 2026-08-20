@@ -40,7 +40,7 @@ export const updatePassword = async (req, res) => {
 
         const encryptedPassword = await hash(newPassword);
 
-        await User.findByIdAndUpdate(uid, { password: encryptedPassword }, { new: true });
+        await User.findByIdAndUpdate(uid, { password: encryptedPassword }, { returnDocument: 'after' });
 
         return res.status(200).json({
             success: true,
@@ -60,7 +60,7 @@ export const updateUser = async (req, res) => {
         const { uid } = req.params;
         const data = req.body;
 
-        const user = await User.findByIdAndUpdate(uid, data, { new: true });
+        const user = await User.findByIdAndUpdate(uid, data, { returnDocument: 'after' });
 
         res.status(200).json({
             success: true,
@@ -92,7 +92,7 @@ export const updateProfile = async (req, res) => {
         }
 
         if (user.profilePicture) {
-            const oldProfilePicture = join(__dirname, '../..public/uploads/profile-picture', user.profilePicture);
+            const oldProfilePicture = join(__dirname, '../../public/uploads/profile-picture', user.profilePicture);
             await fs.unlink(oldProfilePicture);
         }
 
@@ -118,7 +118,7 @@ export const deleteUser = async (req, res) => {
     try {
         const { uid } = req.params;
 
-        const user = await User.findByIdAndUpdate(uid, { status: false }, { new: true });
+        const user = await User.findByIdAndUpdate(uid, { status: false }, { returnDocument: 'after' });
 
         return res.status(200).json({
             success: true,

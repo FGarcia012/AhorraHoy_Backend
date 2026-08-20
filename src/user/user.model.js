@@ -20,7 +20,7 @@ const userSchema = Schema({
         type: String,
         required: [true, 'The password must contain a minimum length of 8 characters, one lowercase letter, one uppercase letter, one number and one symbol.'],
     },
-    profile: {
+    profilePicture: {
         type: String,
         required: [false, 'Profile is not required'],
     },
