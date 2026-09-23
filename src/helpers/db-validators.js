@@ -1,6 +1,28 @@
 import User from '../user/user.model.js';
 import Goal from '../goal/goal.model.js';
 import Transaction from '../transaction/transaction.model.js';
+import Income from '../income/income.model.js';
+
+export const incomeExists = async (iid = '') => {
+    const exists = await Income.findById(iid);
+    if (!exists) {
+        throw new Error('No existe el ingreso con el ID proporcionado');
+    }
+};
+
+export const incomeBelongsToUser = async (iid, { req }) => {
+    const income = await Income.findById(iid);
+    if (!income) {
+        throw new Error('No existe el ingreso con el ID proporcionado');
+    }
+
+    if (
+        income.user.toString() !== req.usuario._id.toString() &&
+        req.usuario.role !== 'ADMIN'
+    ) {
+        throw new Error('No tienes permisos para modificar este ingreso');
+    }
+};
 
 export const transactionExists = async (tid = '') => {
     const existe = await Transaction.findById(tid);
