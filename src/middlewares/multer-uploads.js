@@ -30,4 +30,6 @@ const createMulterConfig = (destinationFolder) => {
     });
 };
 
-export const uploadProfilePicture = createMulterConfig("../../public/uploads/profile-picture");
+export const uploadProfilePicture = createMulterConfig('../../public/uploads/profile-picture');
+
+export const uploadGoalPicture = createMulterConfig('../../public/uploads/goal-picture');

@@ -24,7 +24,7 @@ const goalSchema = Schema({
     },
     currentAmount: {
         type: Number,
-        required: [true, 'Current amount is required'],
+        required: [false, 'Current amount is not required'],
         default: 0
     },
     savingAmount: {

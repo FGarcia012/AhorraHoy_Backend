@@ -46,3 +46,36 @@ export const userHasActiveGoal = async (uid = '') => {
         throw new Error('El usuario ya tiene una meta activa');
     }
 };
+
+export const goalExists = async (gid = '') => {
+    const existe = await Goal.findById(gid);
+    if (!existe) {
+        throw new Error('No existe la meta con el ID proporcionado');
+    }
+};
+
+export const goalBelongsToUser = async (gid, { req }) => {
+    const goal = await Goal.findById(gid);
+    if (!goal) {
+        throw new Error('No existe la meta con el ID proporcionado');
+    }
+
+    if (
+        goal.user.toString() !== req.usuario._id.toString() &&
+        req.usuario.role !== 'ADMIN'
+    ) {
+        throw new Error('No tienes permisos para modificar esta meta');
+    }
+};
+
+
+export const activeGoal = async (gid = '') => {
+    const goal = await Goal.findById(gid);
+    if (!goal) {
+        throw new Error('No existe la meta con el ID proporcionado');
+    }
+
+    if (goal.status !== 'ACTIVE') {
+        throw new Error('La meta no se encuentra activa');
+    }
+};
