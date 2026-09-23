@@ -22,7 +22,8 @@ const options = {
     apis: [
         './src/auth/auth.routes.js',
         './src/user/user.routes.js',
-        './src/goal/goal.routes.js'
+        './src/goal/goal.routes.js',
+        './src/transaction/transaction.routes.js'
     ]
 }
 

@@ -1,5 +1,28 @@
 import User from '../user/user.model.js';
 import Goal from '../goal/goal.model.js';
+import Transaction from '../transaction/transaction.model.js';
+
+export const transactionExists = async (tid = '') => {
+    const existe = await Transaction.findById(tid);
+    if (!existe) {
+        throw new Error('No existe la transacción con el ID proporcionado');
+    }
+}
+
+export const transactionBelongsToUser = async (tid, { req }) => {
+    const transaction = await Transaction.findById(tid);
+    if (!transaction) {
+        throw new Error('No existe la transacción con el ID proporcionado');
+    }
+
+    if (
+        transaction.user.toString() !== req.usuario._id.toString() &&
+        req.usuario.role !== 'ADMIN'
+    ) {
+        throw new Error('No tienes permisos para consultar esta transacción');
+    }
+
+}
 
 export const emailExists = async (email = '') => {
     const existe = await User.findOne({ email})
