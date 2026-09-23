@@ -10,6 +10,7 @@ import authRouter from '../src/auth/auth.routes.js';
 import userRouter from '../src/user/user.routes.js';
 import goalRouter from '../src/goal/goal.routes.js';
 import transactionRouter from '../src/transaction/transaction.routes.js';
+import financialRouter from '../src/financial/financial.routes.js';
 import { swaggerDocs, swaggerUi } from './swagger.js';
 
 const middlewares = (app) => {
@@ -26,6 +27,7 @@ const router = (app) => {
     app.use('/ahorraHoy/v1/user', userRouter)
     app.use('/ahorraHoy/v1/goal', goalRouter)
     app.use('/ahorraHoy/v1/transaction', transactionRouter)
+    app.use('/ahorraHoy/v1/financial', financialRouter)
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs))
 }
 
