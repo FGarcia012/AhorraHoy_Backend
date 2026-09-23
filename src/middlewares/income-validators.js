@@ -6,9 +6,9 @@ import { handleErrors } from './handle-errors.js';
 import { validateJWT } from './validate-jwt.js';
 
 const incomeFields = [
-	body('type').isIn(['SALARY', 'BONUS', 'AGUINALDO', 'EXTRA', 'OTHER']).withMessage('El tipo de ingreso no es válido'),
+	body('type').isIn(['SALARY EXTRA', 'BONUS', 'AGUINALDO', 'EXTRA', 'OTHER']).withMessage('El tipo de ingreso no es válido'),
 	body('amount').isFloat({ min: 0.01 }).withMessage('El monto del ingreso debe ser mayor a 0').toFloat(),
-	body('frequency').isIn(['WEEKLY', 'MONTHLY', 'BIMONTHLY', 'YEARLY', 'IRREGULAR']).withMessage('La frecuencia del ingreso no es válida'),
+	body('frequency').isIn(['WEEKLY', 'MONTHLY', 'BIMONTHLY','SEMESTERLY', 'YEARLY', 'IRREGULAR']).withMessage('La frecuencia del ingreso no es válida'),
 	body('description').optional({ nullable: true }).isString().isLength({ max: 100 }).withMessage('La descripción no puede superar los 100 caracteres').trim()
 ];
 
