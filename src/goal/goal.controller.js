@@ -1,4 +1,5 @@
 import Goal from './goal.model.js';
+import Transaction from '../transaction/transaction.model.js'; 
 import fs from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -316,6 +317,13 @@ export const deposit = async (req, res) => {
 
         await goal.save();
 
+        await Transaction.create({
+            user: req.usuario._id,
+            goal: goal._id,
+            type: 'DEPOSIT',
+            amount: depositAmount
+        });
+
         const remainingAmount =
             Math.max(goal.targetAmount - goal.currentAmount, 0);
 
@@ -335,9 +343,7 @@ export const deposit = async (req, res) => {
                 progressPercentage
             }
         });
-
     } catch (err) {
-
         return res.status(500).json({
             success: false,
             message: 'Error al realizar el depósito',
@@ -350,9 +356,9 @@ export const deposit = async (req, res) => {
 
 export const withdraw = async (req, res) => {
     try {
-
         const { gid } = req.params;
         const { amount } = req.body;
+        const withdrawAmount = Number(amount);
 
         const goal = await Goal.findById(gid);
 
@@ -370,16 +376,23 @@ export const withdraw = async (req, res) => {
             });
         }
 
-        if (amount > goal.currentAmount) {
+        if (withdrawAmount > goal.currentAmount) {
             return res.status(400).json({
                 success: false,
                 message: 'No puedes retirar más dinero del disponible'
             });
         }
 
-        goal.currentAmount -= amount;
+        goal.currentAmount -= withdrawAmount;
 
         await goal.save();
+
+        await Transaction.create({
+            user: req.usuario._id,
+            goal: goal._id,
+            type: 'WITHDRAW',
+            amount: withdrawAmount
+        });
 
         const remainingAmount =
             Math.max(goal.targetAmount - goal.currentAmount, 0);
@@ -398,9 +411,7 @@ export const withdraw = async (req, res) => {
                 progressPercentage
             }
         });
-
     } catch (err) {
-
         return res.status(500).json({
             success: false,
             message: 'Error al realizar el retiro',
