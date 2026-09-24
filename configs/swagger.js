@@ -25,7 +25,8 @@ const options = {
         './src/goal/goal.routes.js',
         './src/transaction/transaction.routes.js',
         './src/financial/financial.routes.js',
-        './src/income/income.routes.js'
+        './src/income/income.routes.js',
+        './src/statistics/statistics.router.js'
     ]
 }
 
