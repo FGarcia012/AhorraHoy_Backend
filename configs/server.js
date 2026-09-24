@@ -12,7 +12,7 @@ import goalRouter from '../src/goal/goal.routes.js';
 import transactionRouter from '../src/transaction/transaction.routes.js';
 import financialRouter from '../src/financial/financial.routes.js';
 import incomeRouter from '../src/income/income.routes.js';
-import statisticsRouter from '../src/statistics/statistics.router.js';
+import statisticsRouter from '../src/statistics/statistics.routes.js';
 import { swaggerDocs, swaggerUi } from './swagger.js';
 
 const middlewares = (app) => {
