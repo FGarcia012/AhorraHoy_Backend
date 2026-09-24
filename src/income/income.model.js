@@ -8,7 +8,7 @@ const incomeSchema = Schema({
 	},
 	type: {
 		type: String,
-		enum: ['SALARY EXTRA', 'BONUS', 'AGUINALDO', 'EXTRA', 'OTHER'],
+		enum: ['SALARY_EXTRA', 'BONUS', 'AGUINALDO', 'EXTRA', 'OTHER'],
 		required: [true, 'Income type is required']
 	},
 	amount: {
