@@ -4,6 +4,8 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
 import { dbconnection } from './mongo.js';
 import apiLimiter from '../src/middlewares/rate-limit-validator.js';
 import authRouter from '../src/auth/auth.routes.js';
@@ -15,13 +17,19 @@ import incomeRouter from '../src/income/income.routes.js';
 import statisticsRouter from '../src/statistics/statistics.routes.js';
 import { swaggerDocs, swaggerUi } from './swagger.js';
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const UPLOADS_PATH = join(__dirname, '../public/uploads');
+
 const middlewares = (app) => {
     app.use(express.urlencoded({ extended: false }))
     app.use(express.json())
     app.use(cors())
-    app.use(helmet())
+    app.use(helmet({
+        crossOriginResourcePolicy: { policy: 'cross-origin' }
+    }))
     app.use(morgan('dev'))
     app.use(apiLimiter)
+    app.use('/uploads', express.static(UPLOADS_PATH))
 }
 
 const router = (app) => {
