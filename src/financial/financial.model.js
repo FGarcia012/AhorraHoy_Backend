@@ -1,4 +1,5 @@
 import { Schema, model } from 'mongoose';
+import { toQuetzales } from '../helpers/money.js';
 
 const financialSchema = Schema({
 	user: {
@@ -26,6 +27,7 @@ const financialSchema = Schema({
 financialSchema.methods.toJSON = function () {
 	const { __v, _id, ...financial } = this.toObject();
 	financial.fid = _id;
+	financial.monthlySalary = toQuetzales(financial.monthlySalary);
 	return financial;
 };
 

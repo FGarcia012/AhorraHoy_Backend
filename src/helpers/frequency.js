@@ -14,5 +14,5 @@ export const normalizeToAnnual = (amount, frequency) => {
 
 export const normalizeToMonthly = (amount, frequency) => {
     const annual = normalizeToAnnual(amount, frequency);
-    return annual === null ? null : annual / 12;
+    return annual === null ? null : Math.round(annual / 12);
 };

@@ -1,4 +1,5 @@
 import { Schema, model } from 'mongoose';
+import { toQuetzales } from '../helpers/money.js';
 
 const transactionSchema = Schema({
     user: {
@@ -19,7 +20,7 @@ const transactionSchema = Schema({
     amount: {
         type: Number,
         required: [true, 'Amount is required'],
-        min: [0.01, 'Amount must be greater than 0']
+        min: [1, 'Amount must be greater than 0']
     }
 },
 {
@@ -30,6 +31,7 @@ const transactionSchema = Schema({
 transactionSchema.methods.toJSON = function () {
     const { __v, _id, ...transaction } = this.toObject();
     transaction.tid = _id;
+    transaction.amount = toQuetzales(transaction.amount);
     return transaction;
 };
 

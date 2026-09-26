@@ -3,6 +3,7 @@ import Transaction from '../transaction/transaction.model.js';
 import fs from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { toCents, toQuetzales } from '../helpers/money.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -22,8 +23,8 @@ export const createGoal = async (req, res) => {
         const goal = await Goal.create({
             user: req.usuario._id,
             name,
-            targetAmount,
-            savingAmount,
+            targetAmount: toCents(targetAmount),
+            savingAmount: toCents(savingAmount),
             savingFrequency,
             goalPicture
         });
@@ -63,7 +64,11 @@ export const getActiveGoal = async (req, res) => {
             });
         }
 
-        const remainingAmount = goal.targetAmount - goal.currentAmount;
+        // goal.targetAmount / goal.currentAmount / goal.savingAmount son
+        // valores crudos del documento (CENTAVOS enteros); el arreglo abajo
+        // opera sobre enteros, así que es exacto. La conversión a Quetzales
+        // se hace solo al armar la respuesta.
+        const remainingAmountCents = goal.targetAmount - goal.currentAmount;
 
         const progressPercentage = (goal.currentAmount / goal.targetAmount) * 100;
 
@@ -72,7 +77,7 @@ export const getActiveGoal = async (req, res) => {
         if (goal.savingAmount && goal.savingFrequency) {
 
             const periodsRemaining =
-                remainingAmount / goal.savingAmount;
+                remainingAmountCents / goal.savingAmount;
 
             estimatedTime = {
                 periodsRemaining,
@@ -84,9 +89,9 @@ export const getActiveGoal = async (req, res) => {
             success: true,
             goal,
             progress: {
-                currentAmount: goal.currentAmount,
-                targetAmount: goal.targetAmount,
-                remainingAmount,
+                currentAmount: toQuetzales(goal.currentAmount),
+                targetAmount: toQuetzales(goal.targetAmount),
+                remainingAmount: toQuetzales(remainingAmountCents),
                 progressPercentage
             },
             estimatedTime
@@ -198,11 +203,11 @@ export const updateGoal = async (req, res) => {
         }
 
         if (targetAmount !== undefined) {
-            goal.targetAmount = targetAmount;
+            goal.targetAmount = toCents(targetAmount);
         }
 
         if (savingAmount !== undefined) {
-            goal.savingAmount = savingAmount;
+            goal.savingAmount = toCents(savingAmount);
         }
 
         if (savingFrequency !== undefined) {
@@ -288,7 +293,9 @@ export const deposit = async (req, res) => {
 
         const { gid } = req.params;
         const { amount } = req.body;
-        const depositAmount = Number(amount);
+        // amount llega en Quetzales (decimal) desde el frontend; se convierte
+        // a centavos enteros antes de cualquier cálculo o guardado.
+        const depositAmountCents = toCents(amount);
 
         const goal = await Goal.findById(gid);
 
@@ -306,20 +313,20 @@ export const deposit = async (req, res) => {
             });
         }
 
-        const remainingBeforeDeposit = goal.targetAmount - goal.currentAmount;
+        const remainingBeforeDepositCents = goal.targetAmount - goal.currentAmount;
 
-        if (depositAmount > remainingBeforeDeposit) {
+        if (depositAmountCents > remainingBeforeDepositCents) {
             return res.status(400).json({
                 success: false,
-                message: `No puedes depositar más de lo que falta para completar tu meta (te faltan Q${remainingBeforeDeposit.toFixed(2)})`
+                message: `No puedes depositar más de lo que falta para completar tu meta (te faltan Q${toQuetzales(remainingBeforeDepositCents).toFixed(2)})`
             });
         }
 
-        const newAmount = goal.currentAmount + depositAmount;
+        const newAmountCents = goal.currentAmount + depositAmountCents;
 
-        goal.currentAmount = newAmount;
+        goal.currentAmount = newAmountCents;
 
-        if (newAmount >= goal.targetAmount) {
+        if (newAmountCents >= goal.targetAmount) {
             goal.currentAmount = goal.targetAmount;
             goal.status = 'COMPLETED';
         }
@@ -330,10 +337,10 @@ export const deposit = async (req, res) => {
             user: req.usuario._id,
             goal: goal._id,
             type: 'DEPOSIT',
-            amount: depositAmount
+            amount: depositAmountCents
         });
 
-        const remainingAmount =
+        const remainingAmountCents =
             Math.max(goal.targetAmount - goal.currentAmount, 0);
 
         const progressPercentage =
@@ -346,9 +353,9 @@ export const deposit = async (req, res) => {
                 : 'Depósito realizado correctamente',
             goal,
             progress: {
-                currentAmount: goal.currentAmount,
-                targetAmount: goal.targetAmount,
-                remainingAmount,
+                currentAmount: toQuetzales(goal.currentAmount),
+                targetAmount: toQuetzales(goal.targetAmount),
+                remainingAmount: toQuetzales(remainingAmountCents),
                 progressPercentage
             }
         });
@@ -367,7 +374,7 @@ export const withdraw = async (req, res) => {
     try {
         const { gid } = req.params;
         const { amount } = req.body;
-        const withdrawAmount = Number(amount);
+        const withdrawAmountCents = toCents(amount);
 
         const goal = await Goal.findById(gid);
 
@@ -385,14 +392,14 @@ export const withdraw = async (req, res) => {
             });
         }
 
-        if (withdrawAmount > goal.currentAmount) {
+        if (withdrawAmountCents > goal.currentAmount) {
             return res.status(400).json({
                 success: false,
                 message: 'No puedes retirar más dinero del disponible'
             });
         }
 
-        goal.currentAmount -= withdrawAmount;
+        goal.currentAmount -= withdrawAmountCents;
 
         await goal.save();
 
@@ -400,10 +407,10 @@ export const withdraw = async (req, res) => {
             user: req.usuario._id,
             goal: goal._id,
             type: 'WITHDRAW',
-            amount: withdrawAmount
+            amount: withdrawAmountCents
         });
 
-        const remainingAmount =
+        const remainingAmountCents =
             Math.max(goal.targetAmount - goal.currentAmount, 0);
 
         const progressPercentage =
@@ -414,9 +421,9 @@ export const withdraw = async (req, res) => {
             message: 'Retiro realizado correctamente',
             goal,
             progress: {
-                currentAmount: goal.currentAmount,
-                targetAmount: goal.targetAmount,
-                remainingAmount,
+                currentAmount: toQuetzales(goal.currentAmount),
+                targetAmount: toQuetzales(goal.targetAmount),
+                remainingAmount: toQuetzales(remainingAmountCents),
                 progressPercentage
             }
         });

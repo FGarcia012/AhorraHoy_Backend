@@ -3,6 +3,7 @@ import Financial from '../financial/financial.model.js';
 import Income from '../income/income.model.js';
 import { normalizeToMonthly } from '../helpers/frequency.js';
 import { calculateExpenseSummary } from '../helpers/expense-calculations.js';
+import { toCents, toQuetzales, centsMapToQuetzales } from '../helpers/money.js';
 
 const SUGGESTED_SAVINGS_RATE = 0.2;
 
@@ -14,7 +15,7 @@ export const createExpense = async (req, res) => {
         const expense = await Expense.create({
             user: uid,
             category,
-            amount,
+            amount: toCents(amount),
             frequency,
             description
         });
@@ -85,7 +86,7 @@ export const updateExpense = async (req, res) => {
 
         const expense = await Expense.findByIdAndUpdate(
             eid,
-            { category, amount, frequency, description },
+            { category, amount: toCents(amount), frequency, description },
             { new: true, runValidators: true }
         );
 
@@ -149,40 +150,50 @@ export const getExpenseSummary = async (req, res) => {
             Income.find({ user: uid })
         ]);
 
-        let recurringMonthlyIncome = financial?.monthlySalary ? Number(financial.monthlySalary) : 0;
+        // Todo lo anterior (totalMonthlyExpenses, goalCommitment.monthlyAmount,
+        // income.amount, financial.monthlySalary) viene en CENTAVOS enteros
+        // desde la BD/expense-calculations.js. Se calcula en centavos y solo
+        // se convierte a Quetzales al construir la respuesta/mensajes.
+        let recurringMonthlyIncomeCents = financial?.monthlySalary ? Number(financial.monthlySalary) : 0;
 
         for (const income of incomes) {
             if (income.frequency === 'IRREGULAR') continue;
-            recurringMonthlyIncome += normalizeToMonthly(income.amount, income.frequency);
+            recurringMonthlyIncomeCents += normalizeToMonthly(income.amount, income.frequency);
         }
 
-        const baseMonthlyExpenses = totalMonthlyExpenses - (goalCommitment?.monthlyAmount || 0);
-        const availableAfterExpenses = Math.max(recurringMonthlyIncome - baseMonthlyExpenses, 0);
-        const suggestedMonthlySaving = Number((availableAfterExpenses * SUGGESTED_SAVINGS_RATE).toFixed(2));
+        const goalMonthlyCommitmentCents = goalCommitment?.monthlyAmount || 0;
+        const baseMonthlyExpensesCents = totalMonthlyExpenses - goalMonthlyCommitmentCents;
+        const availableAfterExpensesCents = Math.max(recurringMonthlyIncomeCents - baseMonthlyExpensesCents, 0);
+        const suggestedMonthlySavingCents = Math.round(availableAfterExpensesCents * SUGGESTED_SAVINGS_RATE);
+
+        const suggestedMonthlySaving = toQuetzales(suggestedMonthlySavingCents);
+        const goalCommitmentMonthlyQuetzales = toQuetzales(goalMonthlyCommitmentCents);
 
         let savingSuggestionMessage;
 
         if (!goalCommitment) {
-            savingSuggestionMessage = availableAfterExpenses > 0
+            savingSuggestionMessage = availableAfterExpensesCents > 0
                 ? `Con tus ingresos y gastos actuales, podrías destinar hasta Q${suggestedMonthlySaving.toFixed(2)} mensuales a una meta de ahorro.`
                 : 'Tus gastos actuales igualan o superan tus ingresos, así que todavía no hay margen disponible para ahorrar.';
-        } else if (goalCommitment.monthlyAmount < suggestedMonthlySaving) {
-            savingSuggestionMessage = `Estás ahorrando Q${goalCommitment.monthlyAmount.toFixed(2)} mensuales para "${goalCommitment.goalName}". Según tus ingresos y gastos, podrías aumentar hasta Q${suggestedMonthlySaving.toFixed(2)} mensuales.`;
+        } else if (goalMonthlyCommitmentCents < suggestedMonthlySavingCents) {
+            savingSuggestionMessage = `Estás ahorrando Q${goalCommitmentMonthlyQuetzales.toFixed(2)} mensuales para "${goalCommitment.goalName}". Según tus ingresos y gastos, podrías aumentar hasta Q${suggestedMonthlySaving.toFixed(2)} mensuales.`;
         } else {
-            savingSuggestionMessage = `Estás ahorrando Q${goalCommitment.monthlyAmount.toFixed(2)} mensuales para "${goalCommitment.goalName}", un monto saludable frente a tus ingresos y gastos actuales.`;
+            savingSuggestionMessage = `Estás ahorrando Q${goalCommitmentMonthlyQuetzales.toFixed(2)} mensuales para "${goalCommitment.goalName}", un monto saludable frente a tus ingresos y gastos actuales.`;
         }
 
         return res.status(200).json({
             success: true,
             message: 'Resumen de gastos obtenido correctamente',
             summary: {
-                totalMonthlyExpenses,
-                totalAnnualExpenses,
-                irregularExpenses,
-                expensesByCategory,
-                goalCommitment,
-                recurringMonthlyIncome,
-                availableAfterExpenses,
+                totalMonthlyExpenses: toQuetzales(totalMonthlyExpenses),
+                totalAnnualExpenses: toQuetzales(totalAnnualExpenses),
+                irregularExpenses: toQuetzales(irregularExpenses),
+                expensesByCategory: centsMapToQuetzales(expensesByCategory),
+                goalCommitment: goalCommitment
+                    ? { ...goalCommitment, monthlyAmount: goalCommitmentMonthlyQuetzales }
+                    : null,
+                recurringMonthlyIncome: toQuetzales(recurringMonthlyIncomeCents),
+                availableAfterExpenses: toQuetzales(availableAfterExpensesCents),
                 suggestedMonthlySaving,
                 savingSuggestionMessage
             }

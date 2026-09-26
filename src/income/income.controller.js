@@ -1,4 +1,5 @@
 import Income from './income.model.js';
+import { toCents } from '../helpers/money.js';
 
 export const createIncome = async (req, res) => {
 	try {
@@ -8,7 +9,7 @@ export const createIncome = async (req, res) => {
 		const income = await Income.create({
 			user: uid,
 			type,
-			amount,
+			amount: toCents(amount),
 			frequency,
 			description
 		});
@@ -82,7 +83,7 @@ export const updateIncome = async (req, res) => {
 
 		const income = await Income.findByIdAndUpdate(
 			iid,
-			{ type, amount, frequency, description },
+			{ type, amount: toCents(amount), frequency, description },
 			{ new: true, runValidators: true }
 		);
 

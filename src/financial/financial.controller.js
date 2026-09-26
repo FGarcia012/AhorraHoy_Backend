@@ -1,5 +1,6 @@
 import Financial from './financial.model.js';
 import { calculateExpenseSummary } from '../helpers/expense-calculations.js';
+import { toCents, toQuetzales } from '../helpers/money.js';
 
 export const getFinancial = async (req, res) => {
 	try {
@@ -16,7 +17,7 @@ export const getFinancial = async (req, res) => {
 
 		const { totalMonthlyExpenses } = await calculateExpenseSummary(uid);
 
-		const availableAmount = financial.monthlySalary === null
+		const availableAmountCents = financial.monthlySalary === null
 			? null
 			: Math.max(financial.monthlySalary - totalMonthlyExpenses, 0);
 
@@ -24,8 +25,8 @@ export const getFinancial = async (req, res) => {
 			success: true,
 			message: 'Información financiera obtenida correctamente',
 			financial,
-			totalMonthlyExpenses,
-			availableAmount
+			totalMonthlyExpenses: toQuetzales(totalMonthlyExpenses),
+			availableAmount: toQuetzales(availableAmountCents)
 		});
 	} catch (err) {
 		return res.status(500).json({
@@ -46,7 +47,7 @@ export const updateFinancial = async (req, res) => {
 			{
 				user: uid,
 				hasJob,
-				monthlySalary: hasJob ? monthlySalary : null
+				monthlySalary: hasJob ? toCents(monthlySalary) : null
 			},
 			{
 				new: true,
@@ -58,7 +59,7 @@ export const updateFinancial = async (req, res) => {
 
 		const { totalMonthlyExpenses } = await calculateExpenseSummary(uid);
 
-		const availableAmount = financial.monthlySalary === null
+		const availableAmountCents = financial.monthlySalary === null
 			? null
 			: Math.max(financial.monthlySalary - totalMonthlyExpenses, 0);
 
@@ -66,8 +67,8 @@ export const updateFinancial = async (req, res) => {
 			success: true,
 			message: 'Información financiera actualizada correctamente',
 			financial,
-			totalMonthlyExpenses,
-			availableAmount
+			totalMonthlyExpenses: toQuetzales(totalMonthlyExpenses),
+			availableAmount: toQuetzales(availableAmountCents)
 		});
 	} catch (err) {
 		return res.status(500).json({

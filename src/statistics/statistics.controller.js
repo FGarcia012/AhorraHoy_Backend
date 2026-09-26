@@ -4,6 +4,7 @@ import Goal from '../goal/goal.model.js';
 import Transaction from '../transaction/transaction.model.js';
 import { normalizeToAnnual } from '../helpers/frequency.js';
 import { calculateExpenseSummary } from '../helpers/expense-calculations.js';
+import { toQuetzales, centsMapToQuetzales } from '../helpers/money.js';
 
 const EXPENSE_WARNING_RATIO = 1;
 
@@ -19,55 +20,55 @@ export const getUserStatistics = async (req, res) => {
 			calculateExpenseSummary(uid)
 		]);
 
-		const annualIncomeByType = {};
-		let extraIncomeAnnual = 0;
-		let irregularIncome = 0;
+		const annualIncomeByTypeCents = {};
+		let extraIncomeAnnualCents = 0;
+		let irregularIncomeCents = 0;
 
 		for (const income of incomes) {
-			const amount = Number(income.amount);
+			const amountCents = Number(income.amount);
 
 			if (income.frequency === 'IRREGULAR') {
-				irregularIncome += amount;
+				irregularIncomeCents += amountCents;
 				continue;
 			}
 
-			const annualAmount = normalizeToAnnual(amount, income.frequency);
-			extraIncomeAnnual += annualAmount;
-			annualIncomeByType[income.type] =
-				(annualIncomeByType[income.type] || 0) + annualAmount;
+			const annualAmountCents = normalizeToAnnual(amountCents, income.frequency);
+			extraIncomeAnnualCents += annualAmountCents;
+			annualIncomeByTypeCents[income.type] =
+				(annualIncomeByTypeCents[income.type] || 0) + annualAmountCents;
 		}
 
-		const salaryAnnual = financial?.monthlySalary ? Number(financial.monthlySalary) * 12 : 0;
+		const salaryAnnualCents = financial?.monthlySalary ? Number(financial.monthlySalary) * 12 : 0;
 
-		const totalAnnualIncome = salaryAnnual + extraIncomeAnnual;
-		const totalMonthlyIncome = totalAnnualIncome / 12;
+		const totalAnnualIncomeCents = salaryAnnualCents + extraIncomeAnnualCents;
+		const totalMonthlyIncomeCents = Math.round(totalAnnualIncomeCents / 12);
 
-		const totalDeposited = transactions
+		const totalDepositedCents = transactions
 			.filter((transaction) => transaction.type === 'DEPOSIT')
 			.reduce((total, transaction) => total + Number(transaction.amount), 0);
 
-		const totalWithdrawn = transactions
+		const totalWithdrawnCents = transactions
 			.filter((transaction) => transaction.type === 'WITHDRAW')
 			.reduce((total, transaction) => total + Number(transaction.amount), 0);
 
-		const netSavings = totalDeposited - totalWithdrawn;
+		const netSavingsCents = totalDepositedCents - totalWithdrawnCents;
 
-		const { totalMonthlyExpenses, totalAnnualExpenses, expensesByCategory, goalCommitment } = expenseSummary;
+		const { totalMonthlyExpenses: totalMonthlyExpensesCents, totalAnnualExpenses: totalAnnualExpensesCents, expensesByCategory: expensesByCategoryCents, goalCommitment } = expenseSummary;
 
-		const monthlyAvailableAmount = Math.max(totalMonthlyIncome - totalMonthlyExpenses, 0);
-		const annualAvailableAmount = Math.max(totalAnnualIncome - totalAnnualExpenses, 0);
+		const monthlyAvailableAmountCents = Math.max(totalMonthlyIncomeCents - totalMonthlyExpensesCents, 0);
+		const annualAvailableAmountCents = Math.max(totalAnnualIncomeCents - totalAnnualExpensesCents, 0);
 
-		const expensePercentageOfIncome = totalMonthlyIncome > 0
-			? Number(((totalMonthlyExpenses / totalMonthlyIncome) * 100).toFixed(2))
+		const expensePercentageOfIncome = totalMonthlyIncomeCents > 0
+			? Number(((totalMonthlyExpensesCents / totalMonthlyIncomeCents) * 100).toFixed(2))
 			: null;
 
 		const expensesExceedIncome =
-			totalMonthlyIncome > 0 && totalMonthlyExpenses >= totalMonthlyIncome * EXPENSE_WARNING_RATIO;
+			totalMonthlyIncomeCents > 0 && totalMonthlyExpensesCents >= totalMonthlyIncomeCents * EXPENSE_WARNING_RATIO;
 
 		let goalStatistics = null;
 
 		if (activeGoal) {
-			const remainingAmount = Math.max(
+			const remainingAmountCents = Math.max(
 				Number(activeGoal.targetAmount) - Number(activeGoal.currentAmount),
 				0
 			);
@@ -76,13 +77,13 @@ export const getUserStatistics = async (req, res) => {
 
 			goalStatistics = {
 				goal: activeGoal,
-				currentAmount: Number(activeGoal.currentAmount),
-				targetAmount: Number(activeGoal.targetAmount),
-				remainingAmount,
+				currentAmount: toQuetzales(Number(activeGoal.currentAmount)),
+				targetAmount: toQuetzales(Number(activeGoal.targetAmount)),
+				remainingAmount: toQuetzales(remainingAmountCents),
 				progressPercentage,
 				estimatedTime: activeGoal.savingAmount && activeGoal.savingFrequency
 					? {
-						periodsRemaining: remainingAmount / Number(activeGoal.savingAmount),
+						periodsRemaining: remainingAmountCents / Number(activeGoal.savingAmount),
 						frequency: activeGoal.savingFrequency
 					}
 					: null
@@ -95,24 +96,26 @@ export const getUserStatistics = async (req, res) => {
 			statistics: {
 				income: {
 					totalRecords: incomes.length,
-					salaryAnnual,
-					salaryMonthly: salaryAnnual / 12,
-					extraIncomeAnnual,
-					extraIncomeMonthly: extraIncomeAnnual / 12,
-					irregularIncome,
-					annualIncomeByType,
-					totalAnnualIncome,
-					totalMonthlyIncome
+					salaryAnnual: toQuetzales(salaryAnnualCents),
+					salaryMonthly: toQuetzales(Math.round(salaryAnnualCents / 12)),
+					extraIncomeAnnual: toQuetzales(extraIncomeAnnualCents),
+					extraIncomeMonthly: toQuetzales(Math.round(extraIncomeAnnualCents / 12)),
+					irregularIncome: toQuetzales(irregularIncomeCents),
+					annualIncomeByType: centsMapToQuetzales(annualIncomeByTypeCents),
+					totalAnnualIncome: toQuetzales(totalAnnualIncomeCents),
+					totalMonthlyIncome: toQuetzales(totalMonthlyIncomeCents)
 				},
 				expenses: {
-					totalMonthlyExpenses,
-					totalAnnualExpenses,
-					expensesByCategory,
-					goalCommitment
+					totalMonthlyExpenses: toQuetzales(totalMonthlyExpensesCents),
+					totalAnnualExpenses: toQuetzales(totalAnnualExpensesCents),
+					expensesByCategory: centsMapToQuetzales(expensesByCategoryCents),
+					goalCommitment: goalCommitment
+						? { ...goalCommitment, monthlyAmount: toQuetzales(goalCommitment.monthlyAmount) }
+						: null
 				},
 				comparison: {
-					monthlyAvailableAmount,
-					annualAvailableAmount,
+					monthlyAvailableAmount: toQuetzales(monthlyAvailableAmountCents),
+					annualAvailableAmount: toQuetzales(annualAvailableAmountCents),
 					expensePercentageOfIncome,
 					expensesExceedIncome,
 					warningMessage: expensesExceedIncome
@@ -120,14 +123,14 @@ export const getUserStatistics = async (req, res) => {
 						: null
 				},
 				savings: {
-					totalDeposited,
-					totalWithdrawn,
-					netSavings
+					totalDeposited: toQuetzales(totalDepositedCents),
+					totalWithdrawn: toQuetzales(totalWithdrawnCents),
+					netSavings: toQuetzales(netSavingsCents)
 				},
 				financial: financial
 					? {
 						hasJob: financial.hasJob,
-						monthlySalary: financial.monthlySalary
+						monthlySalary: toQuetzales(financial.monthlySalary)
 					}
 					: null,
 				goal: goalStatistics
