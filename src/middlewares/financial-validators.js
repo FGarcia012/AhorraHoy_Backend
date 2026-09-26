@@ -21,7 +21,6 @@ export const updateFinancialValidator = [
 	...validateFinancialOwner,
 	body('hasJob').isBoolean().withMessage('El campo hasJob debe ser booleano').toBoolean(),
 	body('monthlySalary').optional({ nullable: true }).isFloat({ min: 0.01 }).withMessage('El salario mensual debe ser mayor a 0').toFloat(),
-	body('monthlyExpenses').isFloat({ min: 0 }).withMessage('Los gastos mensuales no pueden ser negativos').toFloat(),
 	body('hasJob').custom((hasJob, { req }) => {
 		const hasSalary = req.body.monthlySalary !== undefined
 			&& req.body.monthlySalary !== null

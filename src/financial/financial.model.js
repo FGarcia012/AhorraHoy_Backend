@@ -16,12 +16,6 @@ const financialSchema = Schema({
 		type: Number,
 		default: null,
 		min: [0, 'Monthly salary cannot be negative']
-	},
-	monthlyExpenses: {
-		type: Number,
-		required: [true, 'Monthly expenses are required'],
-		default: 0,
-		min: [0, 'Monthly expenses cannot be negative']
 	}
 },
 {

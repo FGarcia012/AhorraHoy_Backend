@@ -49,3 +49,12 @@ export const updateIncomeValidator = [
 	validarCampos,
 	handleErrors
 ];
+
+export const deleteIncomeValidator = [
+    validateJWT,
+    param('iid').isMongoId().withMessage('No es un ID válido'),
+    param('iid').custom(incomeExists),
+    param('iid').custom(incomeBelongsToUser),
+    validarCampos,
+    handleErrors
+];

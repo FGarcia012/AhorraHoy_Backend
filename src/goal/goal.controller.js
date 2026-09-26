@@ -306,6 +306,15 @@ export const deposit = async (req, res) => {
             });
         }
 
+        const remainingBeforeDeposit = goal.targetAmount - goal.currentAmount;
+
+        if (depositAmount > remainingBeforeDeposit) {
+            return res.status(400).json({
+                success: false,
+                message: `No puedes depositar más de lo que falta para completar tu meta (te faltan Q${remainingBeforeDeposit.toFixed(2)})`
+            });
+        }
+
         const newAmount = goal.currentAmount + depositAmount;
 
         goal.currentAmount = newAmount;

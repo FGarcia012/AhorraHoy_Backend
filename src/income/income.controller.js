@@ -106,3 +106,29 @@ export const updateIncome = async (req, res) => {
 		});
 	}
 };
+
+export const deleteIncome = async (req, res) => {
+    try {
+        const { iid } = req.params;
+
+        const income = await Income.findByIdAndDelete(iid);
+
+        if (!income) {
+            return res.status(404).json({
+                success: false,
+                message: 'No se encontró el ingreso'
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Ingreso eliminado correctamente'
+        });
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al eliminar el ingreso',
+            error: err.message
+        });
+    }
+};

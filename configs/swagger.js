@@ -25,6 +25,7 @@ const options = {
             { name: 'Transaction', description: 'Historial de movimientos' },
             { name: 'Financial', description: 'Configuracion financiera del usuario' },
             { name: 'Income', description: 'Ingresos del usuario' },
+            { name: 'Expense', description: 'Gastos del usuario' },
             { name: 'Statistics', description: 'Resumenes y proyecciones' }
         ],
         components: {
@@ -65,6 +66,14 @@ const options = {
                     in: 'path',
                     required: true,
                     description: 'ID del ingreso',
+                    schema: { type: 'string', pattern: '^[a-fA-F0-9]{24}$' },
+                    example: '507f1f77bcf86cd799439011'
+                },
+                ExpenseId: {
+                    name: 'eid',
+                    in: 'path',
+                    required: true,
+                    description: 'ID del gasto',
                     schema: { type: 'string', pattern: '^[a-fA-F0-9]{24}$' },
                     example: '507f1f77bcf86cd799439011'
                 }
@@ -125,7 +134,6 @@ const options = {
                         user: { type: 'string' },
                         hasJob: { type: 'boolean', example: true },
                         monthlySalary: { type: 'number', nullable: true, example: 5000 },
-                        monthlyExpenses: { type: 'number', example: 3000 },
                         createdAt: { type: 'string', format: 'date-time' },
                         updatedAt: { type: 'string', format: 'date-time' }
                     }
@@ -135,10 +143,23 @@ const options = {
                     properties: {
                         iid: { type: 'string' },
                         user: { type: 'string' },
-                        type: { type: 'string', enum: ['SALARY EXTRA', 'BONUS', 'AGUINALDO', 'EXTRA', 'OTHER'] },
+                        type: { type: 'string', enum: ['SALARY_EXTRA', 'BONUS', 'AGUINALDO', 'EXTRA', 'OTHER'] },
                         amount: { type: 'number', format: 'float', example: 5000 },
                         frequency: { type: 'string', enum: ['WEEKLY', 'MONTHLY', 'BIMONTHLY', 'SEMESTERLY', 'YEARLY', 'IRREGULAR'] },
                         description: { type: 'string', nullable: true, example: 'Salario mensual' },
+                        createdAt: { type: 'string', format: 'date-time' },
+                        updatedAt: { type: 'string', format: 'date-time' }
+                    }
+                },
+                Expense: {
+                    type: 'object',
+                    properties: {
+                        eid: { type: 'string' },
+                        user: { type: 'string' },
+                        category: { type: 'string', enum: ['HOUSING', 'FOOD', 'TRANSPORT', 'UTILITIES', 'HEALTH', 'EDUCATION', 'ENTERTAINMENT', 'DEBT', 'OTHER'] },
+                        amount: { type: 'number', format: 'float', example: 500 },
+                        frequency: { type: 'string', enum: ['WEEKLY', 'MONTHLY', 'BIMONTHLY', 'SEMESTERLY', 'YEARLY', 'IRREGULAR'] },
+                        description: { type: 'string', nullable: true, example: 'Renta del apartamento' },
                         createdAt: { type: 'string', format: 'date-time' },
                         updatedAt: { type: 'string', format: 'date-time' }
                     }
@@ -153,7 +174,8 @@ const options = {
         './src/transaction/transaction.routes.js',
         './src/financial/financial.routes.js',
         './src/income/income.routes.js',
-        './src/statistics/statistics.router.js'
+        './src/expense/expense.routes.js',
+        './src/statistics/statistics.routes.js'
     ]
 }
 

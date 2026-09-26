@@ -14,6 +14,7 @@ import goalRouter from '../src/goal/goal.routes.js';
 import transactionRouter from '../src/transaction/transaction.routes.js';
 import financialRouter from '../src/financial/financial.routes.js';
 import incomeRouter from '../src/income/income.routes.js';
+import expenseRouter from '../src/expense/expense.routes.js';
 import statisticsRouter from '../src/statistics/statistics.routes.js';
 import { swaggerDocs, swaggerUi } from './swagger.js';
 
@@ -39,6 +40,7 @@ const router = (app) => {
     app.use('/ahorraHoy/v1/transaction', transactionRouter)
     app.use('/ahorraHoy/v1/financial', financialRouter)
     app.use('/ahorraHoy/v1/income', incomeRouter)
+    app.use('/ahorraHoy/v1/expense', expenseRouter)
     app.use('/ahorraHoy/v1/statistics', statisticsRouter)
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs))
 }

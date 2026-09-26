@@ -1,4 +1,5 @@
 import Financial from './financial.model.js';
+import { calculateExpenseSummary } from '../helpers/expense-calculations.js';
 
 export const getFinancial = async (req, res) => {
 	try {
@@ -13,14 +14,17 @@ export const getFinancial = async (req, res) => {
 			});
 		}
 
+		const { totalMonthlyExpenses } = await calculateExpenseSummary(uid);
+
 		const availableAmount = financial.monthlySalary === null
 			? null
-			: Math.max(financial.monthlySalary - financial.monthlyExpenses, 0);
+			: Math.max(financial.monthlySalary - totalMonthlyExpenses, 0);
 
 		return res.status(200).json({
 			success: true,
 			message: 'Información financiera obtenida correctamente',
 			financial,
+			totalMonthlyExpenses,
 			availableAmount
 		});
 	} catch (err) {
@@ -35,15 +39,14 @@ export const getFinancial = async (req, res) => {
 export const updateFinancial = async (req, res) => {
 	try {
 		const { uid } = req.params;
-		const { hasJob, monthlySalary, monthlyExpenses } = req.body;
+		const { hasJob, monthlySalary } = req.body;
 
 		const financial = await Financial.findOneAndUpdate(
 			{ user: uid },
 			{
 				user: uid,
 				hasJob,
-				monthlySalary: hasJob ? monthlySalary : null,
-				monthlyExpenses
+				monthlySalary: hasJob ? monthlySalary : null
 			},
 			{
 				new: true,
@@ -53,14 +56,17 @@ export const updateFinancial = async (req, res) => {
 			}
 		);
 
+		const { totalMonthlyExpenses } = await calculateExpenseSummary(uid);
+
 		const availableAmount = financial.monthlySalary === null
 			? null
-			: Math.max(financial.monthlySalary - financial.monthlyExpenses, 0);
+			: Math.max(financial.monthlySalary - totalMonthlyExpenses, 0);
 
 		return res.status(200).json({
 			success: true,
 			message: 'Información financiera actualizada correctamente',
 			financial,
+			totalMonthlyExpenses,
 			availableAmount
 		});
 	} catch (err) {

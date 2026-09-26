@@ -2,6 +2,7 @@ import User from '../user/user.model.js';
 import Goal from '../goal/goal.model.js';
 import Transaction from '../transaction/transaction.model.js';
 import Income from '../income/income.model.js';
+import Expense from '../expense/expense.model.js';
 
 export const incomeExists = async (iid = '') => {
     const exists = await Income.findById(iid);
@@ -21,6 +22,27 @@ export const incomeBelongsToUser = async (iid, { req }) => {
         req.usuario.role !== 'ADMIN'
     ) {
         throw new Error('No tienes permisos para modificar este ingreso');
+    }
+};
+
+export const expenseExists = async (eid = '') => {
+    const exists = await Expense.findById(eid);
+    if (!exists) {
+        throw new Error('No existe el gasto con el ID proporcionado');
+    }
+};
+
+export const expenseBelongsToUser = async (eid, { req }) => {
+    const expense = await Expense.findById(eid);
+    if (!expense) {
+        throw new Error('No existe el gasto con el ID proporcionado');
+    }
+
+    if (
+        expense.user.toString() !== req.usuario._id.toString() &&
+        req.usuario.role !== 'ADMIN'
+    ) {
+        throw new Error('No tienes permisos para modificar este gasto');
     }
 };
 

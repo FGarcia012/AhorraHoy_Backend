@@ -2,44 +2,45 @@ import Financial from '../financial/financial.model.js';
 import Income from '../income/income.model.js';
 import Goal from '../goal/goal.model.js';
 import Transaction from '../transaction/transaction.model.js';
+import { normalizeToAnnual } from '../helpers/frequency.js';
+import { calculateExpenseSummary } from '../helpers/expense-calculations.js';
 
-const frequencyMultipliers = {
-	WEEKLY: 52,
-	MONTHLY: 12,
-	BIMONTHLY: 6,
-	SEMESTERLY: 2,
-	YEARLY: 1
-};
+const EXPENSE_WARNING_RATIO = 1;
 
 export const getUserStatistics = async (req, res) => {
 	try {
 		const { uid } = req.params;
 
-		const [financial, incomes, transactions, activeGoal] = await Promise.all([
+		const [financial, incomes, transactions, activeGoal, expenseSummary] = await Promise.all([
 			Financial.findOne({ user: uid }),
 			Income.find({ user: uid }),
 			Transaction.find({ user: uid }),
-			Goal.findOne({ user: uid, status: 'ACTIVE' })
+			Goal.findOne({ user: uid, status: 'ACTIVE' }),
+			calculateExpenseSummary(uid)
 		]);
 
 		const annualIncomeByType = {};
-		let projectedAnnualIncome = 0;
+		let extraIncomeAnnual = 0;
 		let irregularIncome = 0;
 
 		for (const income of incomes) {
 			const amount = Number(income.amount);
-			const multiplier = frequencyMultipliers[income.frequency];
 
-			if (!multiplier) {
+			if (income.frequency === 'IRREGULAR') {
 				irregularIncome += amount;
 				continue;
 			}
 
-			const annualAmount = amount * multiplier;
-			projectedAnnualIncome += annualAmount;
+			const annualAmount = normalizeToAnnual(amount, income.frequency);
+			extraIncomeAnnual += annualAmount;
 			annualIncomeByType[income.type] =
 				(annualIncomeByType[income.type] || 0) + annualAmount;
 		}
+
+		const salaryAnnual = financial?.monthlySalary ? Number(financial.monthlySalary) * 12 : 0;
+
+		const totalAnnualIncome = salaryAnnual + extraIncomeAnnual;
+		const totalMonthlyIncome = totalAnnualIncome / 12;
 
 		const totalDeposited = transactions
 			.filter((transaction) => transaction.type === 'DEPOSIT')
@@ -50,17 +51,18 @@ export const getUserStatistics = async (req, res) => {
 			.reduce((total, transaction) => total + Number(transaction.amount), 0);
 
 		const netSavings = totalDeposited - totalWithdrawn;
-		const annualExpenses = financial
-			? Number(financial.monthlyExpenses) * 12
+
+		const { totalMonthlyExpenses, totalAnnualExpenses, expensesByCategory, goalCommitment } = expenseSummary;
+
+		const monthlyAvailableAmount = Math.max(totalMonthlyIncome - totalMonthlyExpenses, 0);
+		const annualAvailableAmount = Math.max(totalAnnualIncome - totalAnnualExpenses, 0);
+
+		const expensePercentageOfIncome = totalMonthlyIncome > 0
+			? Number(((totalMonthlyExpenses / totalMonthlyIncome) * 100).toFixed(2))
 			: null;
-		const annualAvailableAmount = financial?.monthlySalary === null
-			? null
-			: financial
-				? Math.max(
-					(Number(financial.monthlySalary) * 12) - annualExpenses,
-					0
-				)
-				: null;
+
+		const expensesExceedIncome =
+			totalMonthlyIncome > 0 && totalMonthlyExpenses >= totalMonthlyIncome * EXPENSE_WARNING_RATIO;
 
 		let goalStatistics = null;
 
@@ -93,10 +95,29 @@ export const getUserStatistics = async (req, res) => {
 			statistics: {
 				income: {
 					totalRecords: incomes.length,
-					projectedAnnualIncome,
-					projectedMonthlyIncome: projectedAnnualIncome / 12,
+					salaryAnnual,
+					salaryMonthly: salaryAnnual / 12,
+					extraIncomeAnnual,
+					extraIncomeMonthly: extraIncomeAnnual / 12,
 					irregularIncome,
-					annualIncomeByType
+					annualIncomeByType,
+					totalAnnualIncome,
+					totalMonthlyIncome
+				},
+				expenses: {
+					totalMonthlyExpenses,
+					totalAnnualExpenses,
+					expensesByCategory,
+					goalCommitment
+				},
+				comparison: {
+					monthlyAvailableAmount,
+					annualAvailableAmount,
+					expensePercentageOfIncome,
+					expensesExceedIncome,
+					warningMessage: expensesExceedIncome
+						? 'Tus gastos igualan o superan tus ingresos mensuales. Revisa tu presupuesto.'
+						: null
 				},
 				savings: {
 					totalDeposited,
@@ -105,16 +126,8 @@ export const getUserStatistics = async (req, res) => {
 				},
 				financial: financial
 					? {
-						monthlySalary: financial.monthlySalary,
-						monthlyExpenses: financial.monthlyExpenses,
-						monthlyAvailableAmount: financial.monthlySalary === null
-							? null
-							: Math.max(
-								Number(financial.monthlySalary) - Number(financial.monthlyExpenses),
-								0
-							),
-						annualExpenses,
-						annualAvailableAmount
+						hasJob: financial.hasJob,
+						monthlySalary: financial.monthlySalary
 					}
 					: null,
 				goal: goalStatistics

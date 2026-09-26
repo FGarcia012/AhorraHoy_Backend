@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { createIncome, getIncomeById, getUserIncomes, updateIncome } from './income.controller.js';
-import { createIncomeValidator, getIncomeByIdValidator, getUserIncomesValidator, updateIncomeValidator } from '../middlewares/income-validators.js';
+import { createIncome, getIncomeById, getUserIncomes, updateIncome, deleteIncome } from './income.controller.js';
+import { createIncomeValidator, getIncomeByIdValidator, getUserIncomesValidator, updateIncomeValidator, deleteIncomeValidator } from '../middlewares/income-validators.js';
 
 const router = Router();
 
@@ -75,5 +75,20 @@ router.get('/getUserIncomes/:uid', getUserIncomesValidator, getUserIncomes);
  *       404: { description: Ingreso no encontrado }
  */
 router.put('/updateIncome/:iid', updateIncomeValidator, updateIncome);
+
+/**
+ * @swagger
+ * /income/deleteIncome/{iid}:
+ *   delete:
+ *     tags: [Income]
+ *     security: [{ bearerAuth: [] }]
+ *     summary: Eliminar un ingreso
+ *     parameters:
+ *       - { $ref: '#/components/parameters/IncomeId' }
+ *     responses:
+ *       200: { description: Ingreso eliminado correctamente }
+ *       404: { description: Ingreso no encontrado }
+ */
+router.delete('/deleteIncome/:iid', deleteIncomeValidator, deleteIncome);
 
 export default router;
