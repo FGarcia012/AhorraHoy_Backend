@@ -18,7 +18,9 @@ const userSchema = Schema({
     },
     password: {
         type: String,
-        required: [true, 'The password must contain a minimum length of 8 characters, one lowercase letter, one uppercase letter, one number and one symbol.'],
+        required: function () {
+            return this.authProvider === 'LOCAL';
+        },
     },
     profilePicture: {
         type: String,
@@ -32,6 +34,15 @@ const userSchema = Schema({
     status: {
         type: Boolean,
         default: true,
+    },
+    authProvider: {
+        type: String,
+        enum: ['LOCAL', 'GOOGLE'],
+        default: 'LOCAL',
+    },
+    googleId: {
+        type: String,
+        default: null,
     }
 },
 {

@@ -1,14 +1,11 @@
-import fs from "fs/promises";
-import { join } from "path";
+import { cloudinary } from '../../configs/cloudinary.js';
 
 export const deleteFileOnError = async (err, req, res, next) => {
-    if (req.file && req.filePath) {
-        const filePath = join(req.filePath, req.file.filename);
-        console.log(filePath);
+    if (req.file && req.file.filename) {
         try {
-            await fs.unlink(filePath);
-        } catch (unlinkErr) {
-            console.log(`Error deleting file: ${unlinkErr}`);
+            await cloudinary.uploader.destroy(req.file.filename);
+        } catch (destroyErr) {
+            console.log(`Error eliminando archivo de Cloudinary: ${destroyErr}`);
         }
     }
     next(err);

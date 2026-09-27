@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login } from './auth.controller.js';
+import { register, login, googleAuth } from './auth.controller.js';
 import { registerValidator, loginValidator } from '../middlewares/user-validators.js';
 import { uploadProfilePicture } from '../middlewares/multer-uploads.js';
 
@@ -60,5 +60,28 @@ router.post('/register', uploadProfilePicture.single('profilePicture'), register
  *         description: Usuario no encontrado
  */
 router.post('/login', loginValidator, login);
+
+/**
+ * @swagger
+ * /auth/google:
+ *   post:
+ *     tags: [Auth]
+ *     summary: Iniciar sesion o registrarse con Google
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [idToken]
+ *             properties:
+ *               idToken: { type: string, description: 'ID Token entregado por Google Identity Services' }
+ *     responses:
+ *       200:
+ *         description: Sesion iniciada correctamente con Google
+ *       401:
+ *         description: Token invalido
+ */
+router.post('/google', googleAuth);
 
 export default router;

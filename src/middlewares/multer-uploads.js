@@ -1,23 +1,18 @@
 import multer from 'multer';
-import { dirname, extname, join } from "path";
-import { fileURLToPath } from "url";
+import { CloudinaryStorage } from 'multer-storage-cloudinary';
+import { cloudinary } from '../../configs/cloudinary.js';
 
-const CURRENT_DIR = dirname(fileURLToPath(import.meta.url));
 const MIMETYPES = ["image/png", "image/jpg", "image/jpeg"];
 const MAX_SIZE = 100000000;
 
-const createMulterConfig = (destinationFolder) => {
+const createMulterConfig = (folder) => {
     return multer({
-        storage: multer.diskStorage({
-            destination: (req, file, cb) => {
-                const fullPath = join(CURRENT_DIR, destinationFolder);
-                req.filePath = fullPath;
-                cb(null, fullPath);
-            },
-            filename: (req, file, cb) => {
-                const fileExtension = extname(file.originalname);
-                const fileName = file.originalname.split(fileExtension)[0];
-                cb(null, `${fileName}-${Date.now()}${fileExtension}`);
+        storage: new CloudinaryStorage({
+            cloudinary,
+            params: {
+                folder: `ahorraHoy/${folder}`,
+                allowed_formats: ['jpg', 'jpeg', 'png'],
+                transformation: [{ width: 800, height: 800, crop: 'limit' }]
             }
         }),
         fileFilter: (req, file, cb) => {
@@ -30,6 +25,6 @@ const createMulterConfig = (destinationFolder) => {
     });
 };
 
-export const uploadProfilePicture = createMulterConfig('../../public/uploads/profile-picture');
+export const uploadProfilePicture = createMulterConfig('profile-picture');
 
-export const uploadGoalPicture = createMulterConfig('../../public/uploads/goal-picture');
+export const uploadGoalPicture = createMulterConfig('goal-picture');

@@ -150,10 +150,6 @@ export const getExpenseSummary = async (req, res) => {
             Income.find({ user: uid })
         ]);
 
-        // Todo lo anterior (totalMonthlyExpenses, goalCommitment.monthlyAmount,
-        // income.amount, financial.monthlySalary) viene en CENTAVOS enteros
-        // desde la BD/expense-calculations.js. Se calcula en centavos y solo
-        // se convierte a Quetzales al construir la respuesta/mensajes.
         let recurringMonthlyIncomeCents = financial?.monthlySalary ? Number(financial.monthlySalary) : 0;
 
         for (const income of incomes) {

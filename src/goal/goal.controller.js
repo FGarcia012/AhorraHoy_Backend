@@ -1,12 +1,8 @@
 import Goal from './goal.model.js';
-import Transaction from '../transaction/transaction.model.js'; 
-import fs from 'fs/promises';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
+import Transaction from '../transaction/transaction.model.js';
+import { cloudinary } from '../../configs/cloudinary.js';
+import { extractPublicId } from '../helpers/cloudinary-image.js';
 import { toCents, toQuetzales } from '../helpers/money.js';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
-
 
 export const createGoal = async (req, res) => {
     try {
@@ -18,7 +14,7 @@ export const createGoal = async (req, res) => {
             savingFrequency
         } = req.body;
 
-        let goalPicture = req.file ? req.file.filename : null;
+        let goalPicture = req.file ? req.file.path : null;
 
         const goal = await Goal.create({
             user: req.usuario._id,
@@ -64,10 +60,6 @@ export const getActiveGoal = async (req, res) => {
             });
         }
 
-        // goal.targetAmount / goal.currentAmount / goal.savingAmount son
-        // valores crudos del documento (CENTAVOS enteros); el arreglo abajo
-        // opera sobre enteros, así que es exacto. La conversión a Quetzales
-        // se hace solo al armar la respuesta.
         const remainingAmountCents = goal.targetAmount - goal.currentAmount;
 
         const progressPercentage = (goal.currentAmount / goal.targetAmount) * 100;
@@ -237,7 +229,7 @@ export const updateGoal = async (req, res) => {
 export const updateGoalPicture = async (req, res) => {
     try {
         const { gid } = req.params;
-        let newGoalPicture = req.file ? req.file.filename : null;
+        let newGoalPicture = req.file ? req.file.path : null;
 
         const goal = await Goal.findById(gid);
 
@@ -265,8 +257,10 @@ export const updateGoalPicture = async (req, res) => {
         }
 
         if (goal.goalPicture) {
-            const oldGoalPicture = join(__dirname, '../../public/uploads/goal-picture', goal.goalPicture);
-            await fs.unlink(oldGoalPicture);
+            const oldPublicId = extractPublicId(goal.goalPicture);
+            if (oldPublicId) {
+                await cloudinary.uploader.destroy(oldPublicId);
+            }
         }
 
         goal.goalPicture = newGoalPicture;
@@ -293,8 +287,6 @@ export const deposit = async (req, res) => {
 
         const { gid } = req.params;
         const { amount } = req.body;
-        // amount llega en Quetzales (decimal) desde el frontend; se convierte
-        // a centavos enteros antes de cualquier cálculo o guardado.
         const depositAmountCents = toCents(amount);
 
         const goal = await Goal.findById(gid);
