@@ -1,4 +1,5 @@
 import { Schema, model } from 'mongoose';
+import { toQuetzales } from '../helpers/money.js';
 
 const goalSchema = Schema({
     user: {
@@ -20,11 +21,11 @@ const goalSchema = Schema({
     targetAmount: {
         type: Number,
         required: [true, 'Target amount is required'],
-        min: [0.01, 'Target amount cannot be negative']
+        min: [1, 'Target amount cannot be negative']
     },
     currentAmount: {
         type: Number,
-        required: [true, 'Current amount is required'],
+        required: [false, 'Current amount is not required'],
         default: 0
     },
     savingAmount: {
@@ -52,6 +53,9 @@ const goalSchema = Schema({
 goalSchema.methods.toJSON = function () {
     const { __v, _id, ...meta } = this.toObject()
     meta.gid = _id
+    meta.targetAmount = toQuetzales(meta.targetAmount)
+    meta.currentAmount = toQuetzales(meta.currentAmount)
+    meta.savingAmount = toQuetzales(meta.savingAmount)
     return meta
 }
 

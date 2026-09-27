@@ -1,10 +1,7 @@
 import { hash, verify } from 'argon2';
 import User from './user.model.js';
-import fs from 'fs/promises';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
+import { cloudinary } from '../../configs/cloudinary.js';
+import { extractPublicId } from '../helpers/cloudinary-image.js';
 
 export const updatePassword = async (req, res) => {
     try {
@@ -79,7 +76,7 @@ export const updateUser = async (req, res) => {
 export const updateProfile = async (req, res) => {
     try {
         const { uid } = req.params;
-        let newProfilePicture = req.file ? req.file.filename : null;
+        let newProfilePicture = req.file ? req.file.path : null;
 
         const user = await User.findById(uid);
 
@@ -92,8 +89,10 @@ export const updateProfile = async (req, res) => {
         }
 
         if (user.profilePicture) {
-            const oldProfilePicture = join(__dirname, '../../public/uploads/profile-picture', user.profilePicture);
-            await fs.unlink(oldProfilePicture);
+            const oldPublicId = extractPublicId(user.profilePicture);
+            if (oldPublicId) {
+                await cloudinary.uploader.destroy(oldPublicId);
+            }
         }
 
         user.profilePicture = newProfilePicture;
