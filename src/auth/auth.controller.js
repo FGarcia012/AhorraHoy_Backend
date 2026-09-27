@@ -1,0 +1,146 @@
+import { hash, verify } from 'argon2';
+import User from '../user/user.model.js';
+import { generateJWT } from '../helpers/generate-jwt.js';
+import { verifyGoogleToken } from '../helpers/google-auth.js';
+
+export const register = async (req, res) => {
+    try {
+        const data = req.body;
+
+        let profilePicture = req.file ? req.file.path : null;
+
+        const encryptedPassword = await hash(data.password);
+        data.password = encryptedPassword;
+        data.profilePicture = profilePicture;
+
+        const user = await User.create(data);
+
+        return res.status(201).json({
+            success: true,
+            message: 'Usuario creado correctamente',
+            name: user.name,
+            email: user.email
+        })
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al registrar el usuario',
+            error: err
+        })
+    }
+}
+
+export const login = async (req, res) => {
+    const { email, password } = req.body;
+
+    try {
+        const user = await User.findOne({
+            $or: [{ email: email }]
+        });
+
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: 'Credenciales incorrectas',
+                error: 'No existe el correo ingresado'
+            });
+        }
+
+        if (!user.password) {
+            return res.status(400).json({
+                success: false,
+                message: 'Esta cuenta fue creada con Google',
+                error: 'Inicia sesión con el botón de Google, no tiene contraseña propia'
+            });
+        }
+
+        const validPassword = await verify(user.password, password);
+
+        if (!validPassword) {
+            return res.status(401).json({
+                success: false,
+                message: 'Credenciales incorrectas',
+                error: 'La contraseña ingresada es incorrecta'
+            });
+        }
+
+        const token = await generateJWT(user.id);
+
+        const { name, surname, email: userEmail, role, profilePicture, uid } = user.toJSON();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Sesión iniciada correctamente',
+            userDetails: {
+                token,
+                uid,
+                name,
+                surname,
+                email: userEmail,
+                role,
+                profilePicture
+            }
+        });
+
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: 'Error al iniciar sesión',
+            error: err.message
+        });
+    }
+};
+
+export const googleAuth = async (req, res) => {
+    try {
+        const { idToken } = req.body;
+
+        if (!idToken) {
+            return res.status(400).json({
+                success: false,
+                message: 'No se recibió el token de Google'
+            });
+        }
+
+        const payload = await verifyGoogleToken(idToken);
+
+        if (!payload || !payload.email_verified) {
+            return res.status(401).json({
+                success: false,
+                message: 'No se pudo verificar la cuenta de Google'
+            });
+        }
+
+        let user = await User.findOne({ email: payload.email });
+
+        if (!user) {
+            user = await User.create({
+                name: payload.given_name || payload.name || 'Usuario',
+                surname: payload.family_name || 'Google',
+                email: payload.email,
+                profilePicture: payload.picture || null,
+                authProvider: 'GOOGLE',
+                googleId: payload.sub
+            });
+        } else if (!user.googleId) {
+            user.googleId = payload.sub;
+            await user.save();
+        }
+
+        const token = await generateJWT(user.id);
+        const { name, surname, email, role, profilePicture, uid } = user.toJSON();
+
+        return res.status(200).json({
+            success: true,
+            message: 'Sesión iniciada correctamente con Google',
+            userDetails: { token, uid, name, surname, email, role, profilePicture }
+        });
+
+    } catch (err) {
+        return res.status(401).json({
+            success: false,
+            message: 'Error al iniciar sesión con Google',
+            error: err.message
+        });
+    }
+};
